@@ -4,20 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Show the login page.
-     */
-    public function create(Request $request): Response
+
+    public function create(Request $request)
     {
         return Inertia::render('auth/login', [
             'canResetPassword' => Route::has('password.request'),
@@ -25,17 +21,9 @@ class AuthenticatedSessionController extends Controller
         ]);
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(LoginRequest $request): RedirectResponse
-    // {
-    //     $request->authenticate();
 
-    //     $request->session()->regenerate();
+    public function store(LoginRequest $request)
 
-    //     return redirect()->intended(route('dashboard', absolute: false));
-    // }
     {
         $credentials = $request->only('email', 'password');
 
@@ -45,33 +33,32 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        // Puedes guardar el token en una cookie (opcional para Inertia)
-        cookie()->queue('token', $token, 60 * 24); // 1 día
+        cookie()->queue('token', $token, 60 * 24);
 
         return redirect()->intended(route('dashboard'));
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
+    public function refreshToken()
+    {
+        try {
+            $token = JWTAuth::getToken();
+            $newToken = auth()->refresh();
+            JWTAuth::invalidate($token);
 
 
-    // public function destroy(Request $request): RedirectResponse
-    // {
-    //     Auth::guard('web')->logout();
+            return response()->json(['token' => $newToken]);
+        } catch (\Exception) {
+            return response()->json(['error' => 'No se pudo refrescar el token'], Response::HTTP_UNAUTHORIZED);
+        }
+    }
 
-    //     $request->session()->invalidate();
-    //     $request->session()->regenerateToken();
 
-    //     return redirect('/');
-    // }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy()
     {
         try {
             JWTAuth::invalidate(JWTAuth::getToken());
         } catch (\Exception $e) {
-            // El token ya estaba invalidado
         }
 
         cookie()->queue(cookie()->forget('token'));

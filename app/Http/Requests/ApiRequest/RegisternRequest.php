@@ -1,18 +1,16 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+namespace App\Http\Requests\ApiRequest;
 
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Http;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
-class RegisterRequest extends FormRequest
+class RegisternRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+
     public function authorize(): bool
     {
         return true;
@@ -78,5 +76,18 @@ class RegisterRequest extends FormRequest
             'ciudad.string' => 'La ciudad debe ser una cadena de texto',
             'ciudad.max' => 'La ciudad no debe exceder los 20 caracteres',
         ];
+    }
+    public function ensureIsNotRateLimited(): void
+    {
+        if (RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+            throw ValidationException::withMessages([
+                'email' => 'Demasiados intentos de registro. Por favor, inténtelo más tarde.',
+            ]);
+        }
+    }
+
+    public function throttleKey(): string
+    {
+        return Str::lower($this->string('email') . '|' . $this->ip());
     }
 }

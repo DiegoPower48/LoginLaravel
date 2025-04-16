@@ -44,7 +44,10 @@ return [
             'provider' => 'users',
         ],
 
-
+        'api' => [
+            'driver' => 'jwt', // Usamos JWT para la autenticación de la API
+            'provider' => 'users',
+        ]
     ],
 
     /*

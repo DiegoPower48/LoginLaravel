@@ -11,12 +11,12 @@ interface AuthLayoutProps {
 export default function AuthSimpleLayout({ children, title, description }: PropsWithChildren<AuthLayoutProps>) {
     return (
         <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-4">
-            <div className="w-full max-w-lg">
-                <div className="flex flex-col gap-8">
-                    <div className="flex flex-col items-center gap-4">
+            <div className="w-full max-w-lg rounded-xl border-2 border-red-800 bg-gray-900 p-10">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-row items-center justify-between px-7">
                         <Link href={route('home')} className="flex flex-col items-center gap-2 font-medium">
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                                <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
+                            <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-md hover:scale-120">
+                                <AppLogoIcon className="size-12 fill-red-800 text-[var(--foreground)] dark:text-white" />
                             </div>
                             <span className="sr-only">{title}</span>
                         </Link>

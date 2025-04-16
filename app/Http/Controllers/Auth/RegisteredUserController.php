@@ -8,9 +8,12 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class RegisteredUserController extends Controller
 {
@@ -40,6 +43,19 @@ class RegisteredUserController extends Controller
             'departamento' => $request->departamento,
             'ciudad' => $request->ciudad,
         ]);
+
+
+        try {
+            // Generar el token JWT manualmente
+            $token = JWTAuth::fromUser($user);
+
+            // Guardar token como cookie
+            Cookie::queue('token', $token, 60 * 24); // 24 horas
+        } catch (JWTException $e) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Error al crear el token. Intenta iniciar sesión manualmente.',
+            ]);
+        }
 
         event(new Registered($user));
 

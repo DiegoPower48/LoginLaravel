@@ -22,38 +22,44 @@ type RegisterForm = {
     ciudad: string;
     password: string;
     password_confirmation: string;
+    recaptcha: string;
+};
+
+type CountryType = {
+    isoCode?: string;
+    name: string;
 };
 
 export default function Register() {
     const [countries, setCountries] = useState(Country.getAllCountries());
-    const [states, setStates] = useState([]);
-    const [cities, setCities] = useState([]);
+    const [states, setStates] = useState<CountryType[]>([]);
+    const [cities, setCities] = useState<Array<CountryType>>([]);
 
     const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
         name: '',
         email: '',
         celular: '',
-        pais: '',
+        pais: 'pais',
         departamento: '',
         ciudad: '',
         password: '',
         password_confirmation: '',
         recaptcha: '',
     });
-
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('register'), {
-            onFinish: () => reset('password', 'password_confirmation', 'pais', 'departamento', 'ciudad', 'celular'),
+            onFinish: () => {
+                reset('password', 'password_confirmation', 'pais', 'departamento', 'ciudad', 'celular');
+                recaptchaRef.current?.reset();
+            },
         });
-        console.log(data);
     };
-
-    const recaptchaRef = useRef<ReCAPTCHA>(null);
 
     useEffect(() => {
         if (data.pais) {
-            const selectedCountry = countries.find((c) => c.isoCode === data.pais);
+            countries.find((c) => c.isoCode === data.pais);
             const countryStates = State.getStatesOfCountry(data.pais);
             setStates(countryStates);
             setData('departamento', '');
@@ -73,8 +79,8 @@ export default function Register() {
     return (
         <AuthLayout title="Crea una cuenta" description="Ingresa tus datos por favor">
             <Head title="Register" />
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
+            <form className="flex flex-col" onSubmit={submit}>
+                <div className="grid gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="name">Nombre:</Label>
                         <Input
@@ -142,7 +148,6 @@ export default function Register() {
                             id="celular"
                             type="number"
                             required
-                            autoFocus
                             className="appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             maxLength={12}
                             tabIndex={5}
@@ -160,7 +165,7 @@ export default function Register() {
                         <InputError message={errors.celular} className="mt-2" />
                     </div>
                     <div className="grid grid-cols-3 grid-rows-1 items-center justify-center gap-2">
-                        <div className="rounded-md border-1 border-white p-2">
+                        <div className="border-input-1 rounded-md border-2 p-2">
                             <Label htmlFor="pais">País:</Label>
                             <select
                                 id="pais"
@@ -168,11 +173,13 @@ export default function Register() {
                                 required
                                 onChange={(e) => setData('pais', e.target.value)}
                                 disabled={processing}
-                                className="w-full rounded border p-2"
+                                className="w-full rounded border p-2 text-xs"
                             >
-                                <option value="">Selecciona un país</option>
+                                <option className="bg-accent" value="">
+                                    País
+                                </option>
                                 {countries.map((country) => (
-                                    <option key={country.isoCode} value={country.isoCode}>
+                                    <option className="bg-accent text-sm" key={country.isoCode} value={country.isoCode}>
                                         {country.name}
                                     </option>
                                 ))}
@@ -180,8 +187,7 @@ export default function Register() {
                             <InputError message={errors.pais} className="mt-2" />
                         </div>
 
-                        {/* Departamento */}
-                        <div className="rounded-md border-1 border-white p-2">
+                        <div className="border-input-1 rounded-md border-2 p-2">
                             <Label htmlFor="departamento">Departamento:</Label>
                             <select
                                 id="departamento"
@@ -189,20 +195,22 @@ export default function Register() {
                                 required
                                 onChange={(e) => setData('departamento', e.target.value)}
                                 disabled={!states.length || processing}
-                                className="w-full rounded border p-2"
+                                className="w-full rounded border p-2 text-xs"
                             >
-                                <option value="">Selecciona un departamento</option>
+                                <option className="bg-accent" value="">
+                                    Departamento
+                                </option>
                                 {states.map((state) => (
-                                    <option key={state.isoCode} value={state.isoCode}>
+                                    <option className="bg-accent text-sm" key={state.isoCode} value={state.isoCode}>
                                         {state.name}
                                     </option>
                                 ))}
                             </select>
+
                             <InputError message={errors.departamento} className="mt-2" />
                         </div>
 
-                        {/* Ciudad */}
-                        <div className="rounded-md border-1 border-white p-2">
+                        <div className="border-input-1 rounded-md border-2 p-2">
                             <Label htmlFor="ciudad">Ciudad:</Label>
                             <select
                                 id="ciudad"
@@ -210,11 +218,13 @@ export default function Register() {
                                 required
                                 onChange={(e) => setData('ciudad', e.target.value)}
                                 disabled={!cities.length || processing}
-                                className="w-full rounded border p-2"
+                                className="w-full rounded border p-2 text-xs"
                             >
-                                <option value="">Selecciona una ciudad</option>
+                                <option className="bg-accent" value="">
+                                    Ciudad
+                                </option>
                                 {cities.map((city) => (
-                                    <option key={city.name} value={city.name}>
+                                    <option className="bg-accent text-sm" key={city.name} value={city.name}>
                                         {city.name}
                                     </option>
                                 ))}
@@ -226,20 +236,20 @@ export default function Register() {
                         required
                         ref={recaptchaRef}
                         sitekey="6LdljRkrAAAAAHqoT7g1toof9oX8v2Ms9Hm7Wl8i"
-                        onChange={(token) => setData('recaptcha', token)}
+                        onChange={(token: string | null) => setData('recaptcha', token || '')}
                     />
                     <InputError message={errors.recaptcha_response} className="mt-2" />
                     <Button type="submit" className="mt-2 w-full" tabIndex={9} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Crear cuenta
                     </Button>
-                </div>
 
-                <div className="text-muted-foreground text-center text-sm">
-                    Already have an account?
-                    <TextLink href={route('login')} tabIndex={10}>
-                        Log in
-                    </TextLink>
+                    <div className="text-muted-foreground text-center text-sm">
+                        Already have an account?
+                        <TextLink href={route('login')} tabIndex={10}>
+                            Log in
+                        </TextLink>
+                    </div>
                 </div>
             </form>
         </AuthLayout>

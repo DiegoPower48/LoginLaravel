@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
 import AuthLayout from '@/layouts/auth-layout';
 import ReCAPTCHA from 'react-google-recaptcha';
 
@@ -34,7 +35,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('login'), {
-            onFinish: () => reset('password'),
+            onFinish: () => {
+                reset('password');
+                recaptchaRef.current?.reset();
+            },
         });
     };
 
@@ -95,9 +99,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         required
                         ref={recaptchaRef}
                         sitekey="6LdljRkrAAAAAHqoT7g1toof9oX8v2Ms9Hm7Wl8i"
-                        onChange={(token) => setData('recaptcha', token)}
+                        onChange={(token: string | null) => setData('recaptcha', token || '')}
                     />
                     <InputError message={errors.recaptcha} className="mt-2" />
+
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Ingresar
