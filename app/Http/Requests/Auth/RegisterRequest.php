@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Auth;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpFoundation\Response;
 
-class UserRequest extends FormRequest
+class RegisterRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -27,14 +28,23 @@ class UserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
             "celular" => 'required|string|max:255',
             "pais" => 'required|string|max:255',
             "departamento" => 'required|string|max:255',
             "ciudad" => 'required|string|max:255',
+            'recaptcha' => ['required', function ($attribute, $value, $fail) {
+                $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => env('RECAPTCHA_SECRET_KEY'),
+                    'response' => $value,
+                ]);
+
+                if (!($response->json()['success'] ?? false)) {
+                    $fail('Verificación de reCAPTCHA fallida.');
+                }
+            }],
         ];
     }
-
     public function message(): array
     {
         return [
@@ -62,13 +72,5 @@ class UserRequest extends FormRequest
             "ciudad.string" => 'Ciudad must be a string',
             "ciudad.max" => 'Ciudad must not exceed 255 characters',
         ];
-    }
-    public function failedValidation(Validator $validator)
-    {
-        throw new HttpResponseException(response()->json([
-            'status' => false,
-            'message' => 'Validation Error',
-            'data' => $validator->errors(),
-        ], Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 }

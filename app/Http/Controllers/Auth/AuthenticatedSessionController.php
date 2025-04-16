@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -28,23 +29,52 @@ class AuthenticatedSessionController extends Controller
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
+    // {
+    //     $request->authenticate();
+
+    //     $request->session()->regenerate();
+
+    //     return redirect()->intended(route('dashboard', absolute: false));
+    // }
     {
-        $request->authenticate();
+        $credentials = $request->only('email', 'password');
 
-        $request->session()->regenerate();
+        if (! $token = JWTAuth::attempt($credentials)) {
+            return back()->withErrors([
+                'email' => 'Credenciales inválidas.',
+            ]);
+        }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Puedes guardar el token en una cookie (opcional para Inertia)
+        cookie()->queue('token', $token, 60 * 24); // 1 día
+
+        return redirect()->intended(route('dashboard'));
     }
 
     /**
      * Destroy an authenticated session.
      */
+
+
+    // public function destroy(Request $request): RedirectResponse
+    // {
+    //     Auth::guard('web')->logout();
+
+    //     $request->session()->invalidate();
+    //     $request->session()->regenerateToken();
+
+    //     return redirect('/');
+    // }
+
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::guard('web')->logout();
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+        } catch (\Exception $e) {
+            // El token ya estaba invalidado
+        }
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        cookie()->queue(cookie()->forget('token'));
 
         return redirect('/');
     }

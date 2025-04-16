@@ -1,16 +1,17 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler, useEffect, useState } from 'react';
+import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-
-import { City, Country, State } from 'country-state-city';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
+import { City, Country, State } from 'country-state-city';
+
+import ReCAPTCHA from 'react-google-recaptcha';
 
 type RegisterForm = {
     name: string;
@@ -24,6 +25,10 @@ type RegisterForm = {
 };
 
 export default function Register() {
+    const [countries, setCountries] = useState(Country.getAllCountries());
+    const [states, setStates] = useState([]);
+    const [cities, setCities] = useState([]);
+
     const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
         name: '',
         email: '',
@@ -33,18 +38,18 @@ export default function Register() {
         ciudad: '',
         password: '',
         password_confirmation: '',
+        recaptcha: '',
     });
-
-    const [countries, setCountries] = useState(Country.getAllCountries());
-    const [states, setStates] = useState([]);
-    const [cities, setCities] = useState([]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('register'), {
-            onFinish: () => reset('password', 'password_confirmation'),
+            onFinish: () => reset('password', 'password_confirmation', 'pais', 'departamento', 'ciudad', 'celular'),
         });
+        console.log(data);
     };
+
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
 
     useEffect(() => {
         if (data.pais) {
@@ -66,12 +71,12 @@ export default function Register() {
     }, [data.departamento]);
 
     return (
-        <AuthLayout title="Create an account" description="Enter your details below to create your account">
+        <AuthLayout title="Crea una cuenta" description="Ingresa tus datos por favor">
             <Head title="Register" />
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
+                        <Label htmlFor="name">Nombre:</Label>
                         <Input
                             id="name"
                             type="text"
@@ -82,12 +87,12 @@ export default function Register() {
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                             disabled={processing}
-                            placeholder="Full name"
+                            placeholder="Ingresa tu nombre"
                         />
                         <InputError message={errors.name} className="mt-2" />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
+                        <Label htmlFor="email">Correo Electronico:</Label>
                         <Input
                             id="email"
                             type="email"
@@ -97,12 +102,12 @@ export default function Register() {
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                             disabled={processing}
-                            placeholder="email@example.com"
+                            placeholder="Ingresa tu correo"
                         />
                         <InputError message={errors.email} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password">Contraseña:</Label>
                         <Input
                             id="password"
                             type="password"
@@ -112,12 +117,12 @@ export default function Register() {
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             disabled={processing}
-                            placeholder="Password"
+                            placeholder="Escribe una contraseña"
                         />
                         <InputError message={errors.password} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Confirm password</Label>
+                        <Label htmlFor="password_confirmation">Confirmar contraseña:</Label>
                         <Input
                             id="password_confirmation"
                             type="password"
@@ -127,32 +132,40 @@ export default function Register() {
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
                             disabled={processing}
-                            placeholder="Confirm password"
+                            placeholder="Confirma tu contraseña"
                         />
                         <InputError message={errors.password_confirmation} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="celular">Celular</Label>
+                        <Label htmlFor="celular">Celular:</Label>
                         <Input
                             id="celular"
-                            type="text"
+                            type="number"
                             required
                             autoFocus
+                            className="appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            maxLength={12}
                             tabIndex={5}
                             autoComplete="celular"
                             value={data.celular}
-                            onChange={(e) => setData('celular', e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (/^\d{0,10}$/.test(value)) {
+                                    setData('celular', value);
+                                }
+                            }}
                             disabled={processing}
                             placeholder="Ingresa tu numero celular"
                         />
                         <InputError message={errors.celular} className="mt-2" />
                     </div>
                     <div className="grid grid-cols-3 grid-rows-1 items-center justify-center gap-2">
-                        <div>
-                            <Label htmlFor="pais">País</Label>
+                        <div className="rounded-md border-1 border-white p-2">
+                            <Label htmlFor="pais">País:</Label>
                             <select
                                 id="pais"
                                 value={data.pais}
+                                required
                                 onChange={(e) => setData('pais', e.target.value)}
                                 disabled={processing}
                                 className="w-full rounded border p-2"
@@ -168,11 +181,12 @@ export default function Register() {
                         </div>
 
                         {/* Departamento */}
-                        <div>
-                            <Label htmlFor="departamento">Departamento</Label>
+                        <div className="rounded-md border-1 border-white p-2">
+                            <Label htmlFor="departamento">Departamento:</Label>
                             <select
                                 id="departamento"
                                 value={data.departamento}
+                                required
                                 onChange={(e) => setData('departamento', e.target.value)}
                                 disabled={!states.length || processing}
                                 className="w-full rounded border p-2"
@@ -188,11 +202,12 @@ export default function Register() {
                         </div>
 
                         {/* Ciudad */}
-                        <div>
-                            <Label htmlFor="ciudad">Ciudad</Label>
+                        <div className="rounded-md border-1 border-white p-2">
+                            <Label htmlFor="ciudad">Ciudad:</Label>
                             <select
                                 id="ciudad"
                                 value={data.ciudad}
+                                required
                                 onChange={(e) => setData('ciudad', e.target.value)}
                                 disabled={!cities.length || processing}
                                 className="w-full rounded border p-2"
@@ -207,14 +222,21 @@ export default function Register() {
                             <InputError message={errors.ciudad} className="mt-2" />
                         </div>
                     </div>
+                    <ReCAPTCHA
+                        required
+                        ref={recaptchaRef}
+                        sitekey="6LdljRkrAAAAAHqoT7g1toof9oX8v2Ms9Hm7Wl8i"
+                        onChange={(token) => setData('recaptcha', token)}
+                    />
+                    <InputError message={errors.recaptcha_response} className="mt-2" />
                     <Button type="submit" className="mt-2 w-full" tabIndex={9} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Create account
+                        Crear cuenta
                     </Button>
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    Already have an account?{' '}
+                    Already have an account?
                     <TextLink href={route('login')} tabIndex={10}>
                         Log in
                     </TextLink>
