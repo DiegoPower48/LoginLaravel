@@ -49,6 +49,7 @@ export default function Register() {
     const recaptchaRef = useRef<ReCAPTCHA>(null);
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+
         post(route('register'), {
             onFinish: () => {
                 reset('password', 'password_confirmation', 'pais', 'departamento', 'ciudad', 'celular');
@@ -233,19 +234,20 @@ export default function Register() {
                         </div>
                     </div>
                     <ReCAPTCHA
-                        required
+                        id="recaptcha"
                         ref={recaptchaRef}
                         sitekey="6LdljRkrAAAAAHqoT7g1toof9oX8v2Ms9Hm7Wl8i"
                         onChange={(token: string | null) => setData('recaptcha', token || '')}
                     />
-                    <InputError message={errors.recaptcha_response} className="mt-2" />
+                    <InputError message={errors.recaptcha} className="mt-2" />
                     <Button type="submit" className="mt-2 w-full" tabIndex={9} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Crear cuenta
                     </Button>
 
-                    <div className="text-muted-foreground text-center text-sm">
-                        Already have an account?
+                    <div className="text-muted-foreground flex flex-row justify-center gap-4 text-center text-sm">
+                        <div>Already have an account?</div>
+
                         <TextLink href={route('login')} tabIndex={10}>
                             Log in
                         </TextLink>

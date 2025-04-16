@@ -43,7 +43,7 @@ class RegisterRequest extends FormRequest
             }],
         ];
     }
-    public function message()
+    public function messages()
     {
         return [
             'name.required' => 'El nombre es obligatorio',
@@ -75,6 +75,7 @@ class RegisterRequest extends FormRequest
             'ciudad.required' => 'La ciudad es obligatoria',
             'ciudad.string' => 'La ciudad debe ser una cadena de texto',
             'ciudad.max' => 'La ciudad no debe exceder los 20 caracteres',
+            'recaptcha.required' => 'Por favor, confirma que no eres un robot.',
         ];
     }
     public function ensureIsNotRateLimited(): void

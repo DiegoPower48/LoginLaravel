@@ -43,7 +43,7 @@ class LoginRequest extends FormRequest
         ];
     }
 
-    public function message()
+    public function messages()
     {
         return [
             'email.required' => 'El correo electrónico es obligatorio.',
@@ -52,6 +52,7 @@ class LoginRequest extends FormRequest
 
             'password.required' => 'La contraseña es obligatoria.',
             'password.string' => 'La contraseña debe ser una cadena de texto.',
+            'recaptcha.required' => 'Por favor, confirma que no eres un robot.',
         ];
     }
 
