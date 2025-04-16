@@ -12,7 +12,9 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthenticatedSessionController extends Controller
 {
-
+    /**
+     * Show the login page.
+     */
     public function create(Request $request)
     {
         return Inertia::render('auth/login', [
@@ -21,7 +23,9 @@ class AuthenticatedSessionController extends Controller
         ]);
     }
 
-
+    /**
+     * Handle an incoming authentication request.
+     */
     public function store(LoginRequest $request)
 
     {
@@ -38,19 +42,7 @@ class AuthenticatedSessionController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
-    public function refreshToken()
-    {
-        try {
-            $token = JWTAuth::getToken();
-            $newToken = auth()->refresh();
-            JWTAuth::invalidate($token);
 
-
-            return response()->json(['token' => $newToken]);
-        } catch (\Exception) {
-            return response()->json(['error' => 'No se pudo refrescar el token'], Response::HTTP_UNAUTHORIZED);
-        }
-    }
 
 
 

@@ -16,8 +16,9 @@ class JwtMiddleware
             $token = $request->cookie('token');
 
             if (! $token) {
-                throw new JWTException('Token no encontrado en la cookie');
+                return redirect()->route('login');
             }
+
 
             JWTAuth::setToken($token)->authenticate();
         } catch (JWTException $e) {

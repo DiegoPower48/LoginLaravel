@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
-class RegisternRequest extends FormRequest
+class RegisterRequest extends FormRequest
 {
 
     public function authorize(): bool
